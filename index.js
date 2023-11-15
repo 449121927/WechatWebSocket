@@ -1,9 +1,9 @@
 const express = require("express");
-const { init: initDB, Counter } = require("./db");
-
 const app = express();
-const expressWs = require('express-ws')(app);
+const expressWs = require('express-ws');
+expressWs(app);
 
+app.use(express.static("public"));
 
 app.get('/', function (req, res, next) {
   res.send('Hello World!')
@@ -18,15 +18,20 @@ app.ws('/', function (ws, req) {
 
   // 使用 on 方法监听事件
   //   message 事件表示从另一段（服务端）传入的数据
-  ws.on('message', function (msg) {
-    console.log(`receive message ${msg}`)
-    ws.send('default response')
-  })
+  ws.on('message', (data) => {
+    // data: 接收信息
+    server.clients.forEach((item) => {
+      if (item.readyState === ws.OPEN) {
+        // console.log('' + data);
+        item.send('' + data);
+      }
+    });
+  });
 
-  // 设置定时发送消息
-  let timer = setInterval(() => {
-    ws.send(`interval message ${new Date()}`)
-  }, 2000)
+  // // 设置定时发送消息
+  // let timer = setInterval(() => {
+  //   ws.send(`interval message ${new Date()}`)
+  // }, 2000)
 
   // close 事件表示客户端断开连接时执行的回调函数
   ws.on('close', function (e) {
@@ -46,6 +51,7 @@ app.get("/api/wx_openid", async (req, res) => {
 });
 
 const port = process.env.PORT || 80;
+
 async function bootstrap() {
   app.listen(port, () => {
     console.log("启动成功", port);
